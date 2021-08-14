@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using FakeClientLibrary;
 using Microsoft.AspNetCore.Hosting;
@@ -35,5 +36,7 @@ namespace TransactionWebService2
 
                     webBuilder.UseStartup<Startup>();
                 });
+
+        public static TimeSpan TimeoutSpan = TimeSpan.FromSeconds(5);
     }
 }

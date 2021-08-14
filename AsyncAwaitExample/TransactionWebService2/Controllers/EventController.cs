@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using Timer = System.Timers.Timer;
 
 namespace TransactionWebService2.Controllers
 {
@@ -28,7 +32,19 @@ namespace TransactionWebService2.Controllers
 
             context.Database.EnsureCreatedAsync();
 
-            statePerTransaction.InitializeState(transactionId, new StateObject(context));
+            var reset = TimeoutManager.RunActionAfter(Program.TimeoutSpan, () =>
+            {
+                try
+                {
+                    context.Dispose();
+                }
+                finally
+                {
+                    statePerTransaction.RemoveStateObject(transactionId);
+                }
+            });
+
+            statePerTransaction.InitializeState(transactionId, new StateObject(context, reset));
 
             return transactionId;
         }
@@ -38,11 +54,10 @@ namespace TransactionWebService2.Controllers
         public void Add(Guid transactionId, [FromBody] DataPointDTO item)
         {
             var stateObject = statePerTransaction.GetStateObjectOrThrow(transactionId);
+            var context = stateObject.DatabaseContext;
 
             try
             {
-                var context = stateObject.DatabaseContext;
-
                 var dataPointEntity = new DataPoint()
                 {
                     Value = item.Value
@@ -52,36 +67,116 @@ namespace TransactionWebService2.Controllers
             }
             catch
             {
-                statePerTransaction.RemoveStateObject(transactionId);
+                try
+                {
+                    context.Dispose();
+                }
+                finally
+                {
+                    statePerTransaction.RemoveStateObject(transactionId);
+                }
+
                 throw;
             }
+
+            stateObject.RestTimeout(cancel: false);
         }
 
         [HttpPost]
         [Route("Event/EndTransaction")]
         public void EndTransaction(Guid transactionId)
         {
+            var stateObject = statePerTransaction.GetStateObjectOrThrow(transactionId);
+
             try
             {
-                var stateObject = statePerTransaction.GetStateObjectOrThrow(transactionId);
-
                 var context = stateObject.DatabaseContext;
 
-                context.SaveChanges();
+                try
+                {
+                    context.SaveChanges();
+                }
+                finally
+                {
+                    context.Dispose();
+                }
             }
             finally
             {
                 statePerTransaction.RemoveStateObject(transactionId);
             }
+
+            stateObject.RestTimeout(cancel: true);
         }
 
         public class StateObject
         {
-            public DatabaseContext DatabaseContext { get; set; }
+            public DatabaseContext DatabaseContext { get; }
 
-            public StateObject(DatabaseContext databaseContext)
+            public TimeoutManager.Reset RestTimeout { get; }
+
+            public StateObject(DatabaseContext databaseContext, TimeoutManager.Reset restTimeout)
             {
                 DatabaseContext = databaseContext;
+                RestTimeout = restTimeout;
+            }
+        }
+
+        public class TimeoutManager
+        {
+            public delegate bool Reset(bool cancel);
+
+            public static Reset RunActionAfter(TimeSpan after, Action action)
+            {
+                var timer = new Timer(after.TotalMilliseconds);
+
+                bool cannotResetAnymore = false;
+
+                bool reset = false;
+
+                timer.Elapsed += (o, e) =>
+                {
+                    lock (timer)
+                    {
+                        if (reset)
+                        {
+                            reset = false;
+                            return;
+                        }
+
+                        cannotResetAnymore = true;
+                    }
+
+                    action();
+                };
+
+                timer.AutoReset = false;
+
+                timer.Start();
+
+                return (cancel) =>
+                {
+                    lock (timer)
+                    {
+                        if (reset)
+                            return true;
+
+                        if (cannotResetAnymore)
+                            return false;
+
+                        reset = true;
+
+                        timer.Stop();
+
+                        if (!cancel)
+                        {
+                            timer.Start();
+                        }
+
+                        return true;
+                    }
+                };
+
             }
         }
     }
