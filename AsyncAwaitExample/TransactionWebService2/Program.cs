@@ -11,14 +11,16 @@ namespace TransactionWebService2
         public static async Task Main(string[] args)
         {
             var asyncAwaitVersion = true;
-
+            
+            var waitSixSecondsAfterSecondAddRequest = false;
+            
             var baseUrl = "http://localhost:12345/" + (asyncAwaitVersion ? "AsyncAwait" : "Event");
 
             var host = CreateHostBuilder(args).Build();
 
             host.RunAsync();
 
-            await FakeClient.Run(baseUrl);
+            await FakeClient.Run(baseUrl, waitSixSecondsAfterSecondAddRequest);
 
             await host.StopAsync();
 

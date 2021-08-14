@@ -8,7 +8,7 @@ namespace FakeClientLibrary
 {
     public static class FakeClient
     {
-        public static async Task Run(string baseUrl)
+        public static async Task Run(string baseUrl, bool waitSixSecondsAfterSecondAddRequest = false)
         {
             var urlForStartTransaction = Combine(baseUrl, "StartTransaction");
             var urlForAdd = Combine(baseUrl, "Add");
@@ -22,7 +22,7 @@ namespace FakeClientLibrary
 
             for (int i = 0; i < 5; i++)
             {
-                await Task.Delay(TimeSpan.FromSeconds(1));
+                await Task.Delay(TimeSpan.FromSeconds(waitSixSecondsAfterSecondAddRequest && i == 2 ? 6 : 1));
 
                 await Request(httpClient, urlForAdd + "?transactionId=" + transactionId, JsonConvert.SerializeObject(new {Value = "Value" + i}));
             }

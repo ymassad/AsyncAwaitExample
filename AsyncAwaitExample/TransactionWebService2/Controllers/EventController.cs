@@ -113,9 +113,9 @@ namespace TransactionWebService2.Controllers
         {
             public DatabaseContext DatabaseContext { get; }
 
-            public TimeoutManager.Reset RestTimeout { get; }
+            public TimeoutManager.TryReset RestTimeout { get; }
 
-            public StateObject(DatabaseContext databaseContext, TimeoutManager.Reset restTimeout)
+            public StateObject(DatabaseContext databaseContext, TimeoutManager.TryReset restTimeout)
             {
                 DatabaseContext = databaseContext;
                 RestTimeout = restTimeout;
@@ -124,27 +124,22 @@ namespace TransactionWebService2.Controllers
 
         public class TimeoutManager
         {
-            public delegate bool Reset(bool cancel);
+            public delegate void TryReset(bool cancel);
 
-            public static Reset RunActionAfter(TimeSpan after, Action action)
+            public static TryReset RunActionAfter(TimeSpan after, Action action)
             {
                 var timer = new Timer(after.TotalMilliseconds);
 
-                bool cannotResetAnymore = false;
-
-                bool reset = false;
+                bool actionMarkedToBeExecuted = false;
 
                 timer.Elapsed += (o, e) =>
                 {
                     lock (timer)
                     {
-                        if (reset)
-                        {
-                            reset = false;
+                        if (actionMarkedToBeExecuted) //Already executed before
                             return;
-                        }
-
-                        cannotResetAnymore = true;
+                        
+                        actionMarkedToBeExecuted = true;
                     }
 
                     action();
@@ -158,13 +153,8 @@ namespace TransactionWebService2.Controllers
                 {
                     lock (timer)
                     {
-                        if (reset)
-                            return true;
-
-                        if (cannotResetAnymore)
-                            return false;
-
-                        reset = true;
+                        if (actionMarkedToBeExecuted)
+                            return;
 
                         timer.Stop();
 
@@ -172,8 +162,6 @@ namespace TransactionWebService2.Controllers
                         {
                             timer.Start();
                         }
-
-                        return true;
                     }
                 };
 
