@@ -63,10 +63,10 @@ namespace TransactionWebService1.Controllers
         [Route("Event/EndTransaction")]
         public void EndTransaction(Guid transactionId)
         {
+            var stateObject = statePerTransaction.GetStateObjectOrThrow(transactionId);
+
             try
             {
-                var stateObject = statePerTransaction.GetStateObjectOrThrow(transactionId);
-
                 var context = stateObject.DatabaseContext;
 
                 context.SaveChanges();
