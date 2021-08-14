@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Nito.AsyncEx;
 
 namespace TransactionWebService1.Controllers
@@ -8,6 +9,13 @@ namespace TransactionWebService1.Controllers
     [ApiController]
     public class AsyncAwaitController : ControllerBase
     {
+        private readonly IConfiguration configuration;
+
+        public AsyncAwaitController(IConfiguration configuration)
+        {
+            this.configuration = configuration;
+        }
+
         [HttpPost]
         [Route("AsyncAwait/StartTransaction")]
         public Guid StartTransaction()
@@ -43,7 +51,7 @@ namespace TransactionWebService1.Controllers
 
             try
             {
-                var connectionString = "Data Source=.\\SQLEXPRESS;Initial Catalog=AsyncExampleDb;Integrated Security=SSPI;";
+                var connectionString = configuration.GetConnectionString("ConnectionString");
 
                 await using var context = new DatabaseContext(connectionString);
 
@@ -71,7 +79,6 @@ namespace TransactionWebService1.Controllers
                     
                         context.DataPoints.Add(dataPointEntity);
                     }
-                    
                 }
             }
             finally

@@ -1,13 +1,28 @@
+using System.Threading.Tasks;
+using FakeClientLibrary;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace TransactionWebService1
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            CreateHostBuilder(args).Build().Run();
+            var asyncAwaitVersion = true;
+
+            var baseUrl = "http://localhost:12345/" + (asyncAwaitVersion ? "AsyncAwait" : "EventBased");
+
+            var host = CreateHostBuilder(args).Build();
+
+            host.RunAsync();
+
+            await FakeClient.Run(baseUrl);
+
+            await host.StopAsync();
+
+            await Task.Delay(2000);
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
@@ -17,7 +32,6 @@ namespace TransactionWebService1
                     webBuilder.UseKestrel(x =>
                     {
                         x.ListenAnyIP(12345);
-
                     });
 
                     webBuilder.UseStartup<Startup>();
