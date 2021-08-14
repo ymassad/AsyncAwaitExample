@@ -31,18 +31,20 @@ namespace TransactionWebService1.Controllers
         [Route("AsyncAwait/Add")]
         public void Add(Guid transactionId, [FromBody] DataPointDTO item)
         {
-            var collection = statePerTransaction.GetStateObjectOrThrow(transactionId).Collection;
-            
-            collection.Add(item);
+            statePerTransaction
+                .GetStateObjectOrThrow(transactionId)
+                .Collection
+                .Add(item);
         }
 
         [HttpPost]
         [Route("AsyncAwait/EndTransaction")]
         public void EndTransaction(Guid transactionId)
         {
-            var collection = statePerTransaction.GetStateObjectOrThrow(transactionId).Collection;
-
-            collection.CompleteAdding();
+            statePerTransaction
+                .GetStateObjectOrThrow(transactionId)
+                .Collection
+                .CompleteAdding();
         }
 
         private async Task HandleTransaction(Guid transactionId)
