@@ -1,20 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
-namespace TransactionWebService
+namespace TransactionWebService1
 {
     public class DatabaseContext : DbContext
     {
         public DatabaseContext(string connectionString)
-            :base(Create1(connectionString))
+            :base(Create(connectionString))
         {
             
         }
         
-        private static DbContextOptions Create1(string connectionString)
+        private static DbContextOptions Create(string connectionString)
         {
             var optionsBuilder = new DbContextOptionsBuilder<DatabaseContext>();
             optionsBuilder.UseSqlServer(connectionString);

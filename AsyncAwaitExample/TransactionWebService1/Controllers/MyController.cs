@@ -1,19 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Metadata;
+﻿using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Nito.AsyncEx;
 
-namespace TransactionWebService.Controllers
+namespace TransactionWebService1.Controllers
 {
     [ApiController]
     public class AsyncAwaitController : ControllerBase
     {
-
         [HttpPost]
         [Route("AsyncAwait/StartTransaction")]
         public Guid StartTransaction()
@@ -29,7 +23,7 @@ namespace TransactionWebService.Controllers
         [Route("AsyncAwait/Add")]
         public void Add(Guid transactionId, [FromBody] DataPointDTO item)
         {
-            var collection = GetStateObjectOrThrow(transactionId).Collection;
+            var collection = statePerTransaction.GetStateObjectOrThrow(transactionId).Collection;
             
             collection.Add(item);
         }
@@ -38,14 +32,14 @@ namespace TransactionWebService.Controllers
         [Route("AsyncAwait/EndTransaction")]
         public void EndTransaction(Guid transactionId)
         {
-            var collection = GetStateObjectOrThrow(transactionId).Collection;
+            var collection = statePerTransaction.GetStateObjectOrThrow(transactionId).Collection;
 
             collection.CompleteAdding();
         }
 
         private async Task HandleTransaction(Guid transactionId)
         {
-            InitializeState(transactionId);
+            statePerTransaction.InitializeState(transactionId);
 
             try
             {
@@ -82,14 +76,13 @@ namespace TransactionWebService.Controllers
             }
             finally
             {
-                RemoveStateObject(transactionId);
+                statePerTransaction.RemoveStateObject(transactionId);
             }
         }
 
-
         private async Task<(bool ended, DataPointDTO? obj)> WaitForNextItem(Guid transactionId)
         {
-            var collection = GetStateObjectOrThrow(transactionId).Collection;
+            var collection = statePerTransaction.GetStateObjectOrThrow(transactionId).Collection;
 
             if (!await collection.OutputAvailableAsync())
             {
@@ -98,6 +91,9 @@ namespace TransactionWebService.Controllers
 
             return (false, collection.Take());
         }
+
+        private static StatePerTransaction<StateObject> statePerTransaction = new StatePerTransaction<StateObject>(
+            () => new StateObject(new AsyncCollection<DataPointDTO>()));
 
         class StateObject
         {
@@ -108,47 +104,5 @@ namespace TransactionWebService.Controllers
                 Collection = collection;
             }
         }
-        
     }
-
-    public sealed class StatePerTransaction<TStateObject>
-    {
-        private readonly Func<TStateObject> createNew;
-
-        private ConcurrentDictionary<Guid, TStateObject> dictionary =
-            new ConcurrentDictionary<Guid, TStateObject>();
-
-        public StatePerTransaction(Func<TStateObject> createNew)
-        {
-            this.createNew = createNew;
-        }
-
-
-        private void InitializeState(Guid transactionId)
-        {
-            var stateObject = createNew();
-            if (!dictionary.TryAdd(transactionId, stateObject))
-                throw new Exception("Could not add state object");
-        }
-
-
-        private TStateObject GetStateObjectOrThrow(Guid transactionId)
-        {
-            if (!dictionary.TryGetValue(transactionId, out var stateObject))
-                throw new Exception("Unable to find state object for specified transaction id");
-
-            return stateObject;
-        }
-
-        private void RemoveStateObject(Guid transactionId)
-        {
-            dictionary.TryRemove(transactionId, out _);
-        }
-
-    }
-
-
-
-
-
 }

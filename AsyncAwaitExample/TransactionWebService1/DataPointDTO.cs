@@ -1,4 +1,4 @@
-﻿namespace TransactionWebService
+﻿namespace TransactionWebService1
 {
     public class DataPointDTO
     {
