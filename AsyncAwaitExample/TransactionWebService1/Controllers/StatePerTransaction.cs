@@ -5,19 +5,15 @@ namespace TransactionWebService1.Controllers
 {
     public sealed class StatePerTransaction<TStateObject>
     {
-        private readonly Func<TStateObject> createNew;
-
         private readonly ConcurrentDictionary<Guid, TStateObject> dictionary =
             new ConcurrentDictionary<Guid, TStateObject>();
 
-        public StatePerTransaction(Func<TStateObject> createNew)
+        public StatePerTransaction()
         {
-            this.createNew = createNew;
         }
 
-        public void InitializeState(Guid transactionId)
+        public void InitializeState(Guid transactionId, TStateObject stateObject)
         {
-            var stateObject = createNew();
             if (!dictionary.TryAdd(transactionId, stateObject))
                 throw new Exception("Could not add state object");
         }

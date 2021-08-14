@@ -11,9 +11,12 @@ namespace TransactionWebService1.Controllers
     {
         private readonly IConfiguration configuration;
 
-        public AsyncAwaitController(IConfiguration configuration)
+        private readonly StatePerTransaction<StateObject> statePerTransaction;
+
+        public AsyncAwaitController(IConfiguration configuration, StatePerTransaction<StateObject> statePerTransaction)
         {
             this.configuration = configuration;
+            this.statePerTransaction = statePerTransaction;
         }
 
         [HttpPost]
@@ -49,7 +52,7 @@ namespace TransactionWebService1.Controllers
 
         private async Task HandleTransaction(Guid transactionId)
         {
-            statePerTransaction.InitializeState(transactionId);
+            statePerTransaction.InitializeState(transactionId, new StateObject(new AsyncCollection<DataPointDTO>()));
 
             try
             {
@@ -101,10 +104,7 @@ namespace TransactionWebService1.Controllers
             return (false, collection.Take());
         }
 
-        private static StatePerTransaction<StateObject> statePerTransaction = new StatePerTransaction<StateObject>(
-            () => new StateObject(new AsyncCollection<DataPointDTO>()));
-
-        class StateObject
+        public class StateObject
         {
             public AsyncCollection<DataPointDTO> Collection { get; }
 

@@ -12,7 +12,7 @@ namespace TransactionWebService1
         {
             var asyncAwaitVersion = true;
 
-            var baseUrl = "http://localhost:12345/" + (asyncAwaitVersion ? "AsyncAwait" : "EventBased");
+            var baseUrl = "http://localhost:12345/" + (asyncAwaitVersion ? "AsyncAwait" : "Event");
 
             var host = CreateHostBuilder(args).Build();
 
