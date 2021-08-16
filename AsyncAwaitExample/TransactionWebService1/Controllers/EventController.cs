@@ -28,7 +28,7 @@ namespace TransactionWebService1.Controllers
 
             var context = new DatabaseContext(connectionString);
 
-            context.Database.EnsureCreatedAsync();
+            context.Database.EnsureCreated();
 
             statePerTransaction.InitializeState(transactionId, new StateObject(context));
 

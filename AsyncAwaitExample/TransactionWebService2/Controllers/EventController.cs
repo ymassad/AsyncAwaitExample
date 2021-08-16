@@ -29,7 +29,7 @@ namespace TransactionWebService2.Controllers
 
             var context = new DatabaseContext(connectionString);
 
-            context.Database.EnsureCreatedAsync();
+            context.Database.EnsureCreated();
 
             var reset = TimeoutManager.RunActionAfter(Program.TimeoutSpan, () =>
             {
