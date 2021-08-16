@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using Timer = System.Timers.Timer;
 
 namespace TransactionWebService2.Controllers
 {
@@ -119,52 +118,6 @@ namespace TransactionWebService2.Controllers
             {
                 DatabaseContext = databaseContext;
                 RestTimeout = restTimeout;
-            }
-        }
-
-        public class TimeoutManager
-        {
-            public delegate void TryReset(bool cancel);
-
-            public static TryReset RunActionAfter(TimeSpan after, Action action)
-            {
-                var timer = new Timer(after.TotalMilliseconds);
-
-                bool actionMarkedToBeExecuted = false;
-
-                timer.Elapsed += (o, e) =>
-                {
-                    lock (timer)
-                    {
-                        if (actionMarkedToBeExecuted) //Already executed before
-                            return;
-                        
-                        actionMarkedToBeExecuted = true;
-                    }
-
-                    action();
-                };
-
-                timer.AutoReset = false;
-
-                timer.Start();
-
-                return (cancel) =>
-                {
-                    lock (timer)
-                    {
-                        if (actionMarkedToBeExecuted)
-                            return;
-
-                        timer.Stop();
-
-                        if (!cancel)
-                        {
-                            timer.Start();
-                        }
-                    }
-                };
-
             }
         }
     }
