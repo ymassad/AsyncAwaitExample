@@ -18,7 +18,6 @@ namespace TransactionWebService2
 
             timeoutCancellationTokenSource.Cancel();
             return await task;
-
         }
     }
 }
