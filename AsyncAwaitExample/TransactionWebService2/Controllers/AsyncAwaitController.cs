@@ -64,7 +64,9 @@ namespace TransactionWebService2.Controllers
 
                 while (true)
                 {
-                    var item = await WaitForNextItem(transactionId).TimeoutAfter(Program.TimeoutSpan).ConfigureAwait(false);
+                    var item = await WaitForNextItem(transactionId)
+                        .TimeoutAfter(Program.TimeoutSpan)
+                        .ConfigureAwait(false);
 
                     if (item.ended)
                     {
