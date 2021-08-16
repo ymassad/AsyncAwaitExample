@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Timers;
 
-namespace TransactionWebService2.Controllers
+namespace TransactionWebService2
 {
     public class TimeoutManager
     {
