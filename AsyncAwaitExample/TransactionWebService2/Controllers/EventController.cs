@@ -78,7 +78,7 @@ namespace TransactionWebService2.Controllers
                 throw;
             }
 
-            stateObject.RestTimeout(cancel: false);
+            stateObject.ResetTimeout(cancel: false);
         }
 
         [HttpPost]
@@ -105,19 +105,19 @@ namespace TransactionWebService2.Controllers
                 statePerTransaction.RemoveStateObject(transactionId);
             }
 
-            stateObject.RestTimeout(cancel: true);
+            stateObject.ResetTimeout(cancel: true);
         }
 
         public class StateObject
         {
             public DatabaseContext DatabaseContext { get; }
 
-            public TimeoutManager.TryReset RestTimeout { get; }
+            public TimeoutManager.TryReset ResetTimeout { get; }
 
-            public StateObject(DatabaseContext databaseContext, TimeoutManager.TryReset restTimeout)
+            public StateObject(DatabaseContext databaseContext, TimeoutManager.TryReset resetTimeout)
             {
                 DatabaseContext = databaseContext;
-                RestTimeout = restTimeout;
+                ResetTimeout = resetTimeout;
             }
         }
     }
